@@ -39,7 +39,7 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Introduction', link: '/langchain/' },
-            { text: 'Model I/O', link: '/langchain/Model IO' },
+            { text: 'Model I/O', link: '/langchain/ModelIO' },
             { text: 'Chains', link: '/langchain/Chains' },
             { text: 'Memory', link: '/langchain/Memory' },
             { text: 'Tools', link: '/langchain/Tools' },
