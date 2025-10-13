@@ -806,7 +806,6 @@ os.environ["TAVILY_API_KEY"] = "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"
 # name="search_tool",
 # func=search.run,
 # description="用于互联网信息的检索"
-#
 # )
 # tools = [search_tool]
 #或者
@@ -914,7 +913,8 @@ agent_executor.invoke({"input": "我的名字叫Bob"})
 
 - 以通用方式create_xxx_agent的ReAct模式为例，FUNCATION_CALL一样
 - 远程的提示词模版通过https://smith.langchain.com/hub/hwchase17获取
-举例：https://smith.langchain.com/hub/hwchase17/react-chat，这个模板是专为聊天场景设计的ReAct提示模板。这个模板中已经有聊天对话键`chat_history`、 `agent_scratchpad`
+
+举例：https://smith.langchain.com/hub/hwchase17/react-chat 这个模板是专为聊天场景设计的ReAct提示模板。这个模板中已经有聊天对话键`chat_history`、 `agent_scratchpad`
 
 ```python
 # 1.导入相关依赖
