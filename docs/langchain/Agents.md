@@ -1,5 +1,5 @@
 # LangChain Agents
-## 1、理解Agents
+## 1. 理解Agents
 通用人工智能（AGI）将是AI的终极形态，几乎已成为业界共识。同样，构建智能体（Agent）则是AI工程应用当下的“终极形态”。
 
 ### 1.1 Agent与Chain的区别
@@ -204,7 +204,7 @@ agent_executor.invoke({"input":"xxxxx"})
 |提示词 |内置不可见 |可以自定义|
 |工具集成| AgentExecutor中显式传入 |Agent/AgentExecutor中需显式传入|
 
-## 3.Agent中工具的使用
+## 3. Agent中工具的使用
 ### 3.1 传统方式
 
 **案例1：单工具使用**
@@ -600,3 +600,351 @@ agent_executor.invoke({"input": "今天北京的天气怎么样？?"})
 **体会2：使用ChatPromptTemplate**
 
 提示词中需要体现使用的工具、用户输入和agent_scratchpad。
+
+```python
+from langchain.agents import create_react_agent
+from langchain_core.prompts import ChatPromptTemplate
+# 获取Tavily搜索的实例
+from langchain_openai import ChatOpenAI
+from langchain.agents import initialize_agent, AgentType, create_tool_calling_agent,AgentExecutor
+from langchain.tools import Tool
+import os
+import dotenv
+from langchain_openai import ChatOpenAI
+from langchain_community.tools.tavily_
+search import TavilySearchResults
+dotenv.load_dotenv()
+# 读取配置文件的信息
+os.environ['TAVILY_API_KEY'] = "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"
+# 获取Tavily搜索工具的实例
+search = TavilySearchResults(max_results=3)
+# 获取一个搜索的工具
+# 使用Tool
+search_tool = Tool(
+  func=search.run,
+  name="Search",
+  description="用于检索互联网上的信息，尤其是天气情况",
+)
+# 获取大语言模型
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+llm = ChatOpenAI(
+  model="gpt-4o-mini",
+  temperature=0,
+)
+prompt_template = ChatPromptTemplate.from_messages([
+  ("system", "你是一个人工智能的助手，在用户提出需求以后，必须要调用Search工具进行联网搜索"),
+  ("system", """Answer the following questions as best you can. You have access to the following tools:
+      {tools}
+
+      Use the following format:
+
+      Question: the input question you must answer
+      Thought: you should always think about what to do
+      Action: the action to take, should be one of [{tool_names}]
+      Action Input: the input to the action
+      Observation: the result of the action
+      ... (this Thought/Action/Action Input/Observation can repeat N times)
+      Thought: I now know the final answer
+      Final Answer: the final answer to the original input question
+
+      Begin!
+      执行过程建议使用中文
+      """),
+  ("system", "当前思考：{agent_scratchpad}"),
+  ("human", "我的问题是：{question}"), #必须在提示词模板中提供agent_scratchpad参数。
+])
+
+# 获取Agent的实例：create_tool_calling_agent()
+agent = create_react_agent(
+  llm=llm,
+  prompt=prompt_template,
+  tools=[search_tool]
+)
+# 获取AgentExecutor的实例
+agent_executor = AgentExecutor(
+  agent=agent,
+  tools=[search_tool],
+  verbose=True,
+  handle_parsing_errors=True,
+  max_iterations=6 # 可选：限制最大迭代次数，防止无限循环
+)
+# 通过AgentExecutor的实例调用invoke(),得到响应
+result = agent_executor.invoke({"question":"查询今天北京的天气情况"})
+# 处理响应
+print(result)
+```
+
+上述执行可能会报错。
+
+**错误原因：**
+
+- 使用ReAct模式时，要求 LLM 的响应必须遵循严格的格式（如包含`Thought:`、`Action:`等标记。
+- 但LLM直接返回了自由文本（非结构化），导致解析器无法识别。
+
+修改：
+- 任务不变，添加 handle_parsing_errors=True 。用于控制 Agent 在解析工具调用或输出时发生错误的容错行为。
+
+**handle_parsing_errors=True 的作用**
+
+- 自动捕获错误并修复：当解析失败时，Agent不会直接崩溃，而是将错误信息传递给LLM，让
+LLM`自行修正并重试`。
+- 降级处理：如果重试后仍失败，Agent会返回一个友好的错误消息（如 "I couldn't process that request."），而不是抛出异常。
+
+**小结：**
+| 场景 | handle_parsing_errors=True | handle_parsing_errors=False|
+|:---:|:---:|:---:|
+|解析成功 |正常执行| 正常执行|
+|解析失败 | 自动修复或降级响应|直接抛出异常|
+|适用场景 | 生产环境（保证鲁棒性）| 开发调试（快速发现问题）|
+
+## 4. Agent嵌入记忆组件
+### 4.1 传统方式
+比如：北京明天的天气怎么样？上海呢？ （通过两次对话实现）
+举例：以REACT模式为例
+
+```python
+# 导入依赖包
+from langchain_openai import ChatOpenAI
+from langchain.agents import initialize_agent, AgentType
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain.memory import ConversationBufferMemory
+import os
+import dotenv
+
+dotenv.load_dotenv()
+# 读取配置文件的信息
+os.environ['TAVILY_API_KEY'] = "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"
+# 获取Tavily搜索工具的实例
+search = TavilySearchResults(max_results=2)
+# 获取一个搜索的工具
+# 使用Tool
+search_tool = Tool(
+  func=search.run,
+  name="Search",
+  description="用于检索互联网上的信息，尤其是天气情况",
+)
+# 获取大语言模型
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+llm = ChatOpenAI(
+  model="gpt-4o-mini",
+  temperature=0,
+)
+
+# 定义记忆组件(以ConversationBufferMemory为例)
+memory = ConversationBufferMemory(
+  memory_key="chat_history", #必须是此值，通过initialize_agent()的源码追踪得到
+  return_messages=True
+)
+
+# 创建 AgentExecutor
+agent_executor = initialize_agent(
+  tools=[search_tool],
+  llm=llm,
+  agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+  memory=memory, #在AgentExecutor中声明
+  verbose=True
+)
+# 7. 测试对话
+# 第一个查询
+query1="北京明天的天气怎么样？"
+result1 = agent_executor.invoke(query1)
+print(f"查询结果: {result1}")
+# print("\n=== 继续对话 ===")
+query2="上海呢"
+result2=agent_executor.invoke(query2)
+print(f"分析结果: {result2}")
+```
+
+上述执行可能会报错。
+
+**错误原因：**
+
+- 使用ReAct模式时，要求 LLM 的响应必须遵循严格的格式（如包含`Thought:`、`Action:`等标记。
+- 但LLM直接返回了自由文本（非结构化），导致解析器无法识别。
+
+修改：
+- 任务不变，添加`handle_parsing_errors=True`。用于控制 Agent 在解析工具调用或输出时发生错误的容错行为。
+
+**handle_parsing_errors=True 的作用**
+
+- 自动捕获错误并修复：当解析失败时，Agent不会直接崩溃，而是将错误信息传递给LLM，让
+LLM`自行修正并重试`。
+- 降级处理：如果重试后仍失败，Agent会返回一个友好的错误消息（如 "I couldn't process that request."），而不是抛出异常。
+
+**小结：**
+| 场景 | handle_parsing_errors=True | handle_parsing_errors=False|
+|:---:|:---:|:---:|
+|解析成功 |正常执行| 正常执行|
+|解析失败 | 自动修复或降级响应|直接抛出异常|
+|适用场景 | 生产环境（保证鲁棒性）| 开发调试（快速发现问题）|
+
+### 4.2 通用方式
+通用方式，相较于传统方式，可以提供自定义的提示词模板
+
+**举例1：FUNCATION_CALL模式**
+
+如果使用的是FUNCTION_CALL方式，则创建Agent时，推荐使用ChatPromptTemplate
+
+```python
+# 导入依赖包
+from langchain_openai import ChatOpenAI
+from langchain.agents import initialize_agent, AgentType
+from langchain.tools import Tool
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain.memory import ConversationBufferMemory
+from langchain_experimental.utilities.python import PythonREPL
+import os
+import dotenv
+
+# 2. 定义 TAVILY_KEY 密钥
+os.environ["TAVILY_API_KEY"] = "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"
+# 3. 定义搜索工具
+# search = TavilySearchResults(max_results=2)
+# search_tool = Tool(
+# name="search_tool",
+# func=search.run,
+# description="用于互联网信息的检索"
+#
+# )
+# tools = [search_tool]
+#或者
+search = TavilySearchResults(max_results = results=2)
+tools = [search]
+
+# 4. 定义LLM
+llm = ChatOpenAI(
+  model="gpt-4",
+  temperature=0
+)
+# 5. 定义提示词模板
+prompt = ChatPromptTemplate.from_messages([
+  ("system", "你是一个有用的助手，可以回答问题并使用工具。"),
+  ("placeholder", "{chat_history}"), # 存储多轮对话的历史记录 如果你没有显式传入 chat_history，Agent 会默认将其视为空列表 []
+  ("human", "{input}"),
+  ("placeholder", "{agent_scratchpad}")
+])
+# 6. 定义记忆组件(以ConversationBufferMemory为例)
+memory = ConversationBufferMemory(
+  memory_key="chat_history",
+  return_messages=True
+)
+
+# 7.创建Agent对象
+agent = create_tool_calling_agent(llm, tools, prompt)
+# 8.创建AgentExecutor执行器对象(通过源码可知，memory参数声明在AgentExecutor父类中)
+agent_executor = AgentExecutor(agent=agent,memory=memory ,tools=tools, verbose=True)
+# 9. 测试对话
+# 第一个查询
+result1 = agent_executor.invoke({"input":"北京的天气是多少"})
+print(f"查询结果: {result1}")
+# print("\n=== 继续对话 ===")
+result2=agent_executor.invoke({"input":"上海呢"})
+print(f"分析结果: {result2}")
+```
+
+**举例2：ReAct模式**
+
+ReAct模式下，创建Agent时，可以使用ChatPromptTemplate、PromptTemplate
+
+```python
+# 1.导入相关包
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.prompts import PromptTemplate
+import os
+
+# 2.定义搜索化工具
+# ① 设置 TAVILY_API 密钥
+os.environ["TAVILY_API_KEY"] = "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" # 需要替换为你的 Tavily API 密钥
+# ② 定义搜索工具
+search = TavilySearchResults(max_results=1)
+# ③ 设置工具集
+tools = [search]
+
+# 3.自定义提示词模版
+template =("Assistant is a large language model trained by OpenAI.\n\n"
+"Assistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics.As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand. \n\n"
+"Assistant is constantly learning and improving, and its capabilities are constantly evolving. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions.Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.\n\n"
+
+    "Overall, Assistant is a powerful tool that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.\n\n"
+    "TOOLS:\n"
+    "------\n\n"
+    "Assistant has access to the following tools:\n\n"
+    "{tools}\n\n"
+    "To use a tool, please use the following format:\n\n"
+    "```\n"
+    "Thought: Do I need to use a tool? Yes\n"
+    "Action: the action to take, should be one of [{tool_names}]\n"
+    "Action Input: the input to the action\n"
+    "Observation: the result of the action\n"
+    "```\n\n"
+    "When you have a response to say to the Human, or if you do not need to use a tool,you MUST use the format:\n\n"
+    "```\n"
+    "Thought: Do I need to use a tool? No\n"
+    "Final Answer: [your response here]\n"
+    "```\n\n"
+    "Begin!\n\n"
+    "Previous conversation history:\n"
+    "{chat_history}\n\n"
+    "New input: {input}\n"
+    "{agent_scratchpad}")
+
+prompt = PromptTemplate.from_template(template)
+# 4.定义LLM
+llm = ChatOpenAI(
+  model="gpt-4o-mini",
+  temperature=0,
+)
+# 5. 定义记忆组件(以ConversationBufferMemory为例)
+memory = ConversationBufferMemory(
+  memory_key="chat_history",
+  return_messages=True
+)
+# 6.创建Agent对象
+agent = create_react_agent(llm, tools, prompt)
+# 7.创建AgentExecutor执行器
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,memory=memory)
+# 8.测试
+agent_executor.invoke({"input": "我的名字叫Bob"})
+```
+
+**举例3：远程获取提示词模版**
+
+- 以通用方式create_xxx_agent的ReAct模式为例，FUNCATION_CALL一样
+- 远程的提示词模版通过https://smith.langchain.com/hub/hwchase17获取
+举例：https://smith.langchain.com/hub/hwchase17/react-chat，这个模板是专为聊天场景设计的ReAct提示模板。这个模板中已经有聊天对话键`chat_history`、 `agent_scratchpad`
+
+```python
+# 1.导入相关依赖
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain import hub
+
+# 2.定义搜索化工具
+# ① 设置 TAVILY_API 密钥
+os.environ["TAVILY_API_KEY"] = "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" # 需要替换为你的 Tavily API 密钥
+# ② 定义搜索工具
+search = TavilySearchResults(max_results=1)
+# ③ 设置工具集
+tools = [search]
+
+# 3.获取提示词
+prompt = hub.pull("hwchase17/react-chat")
+# 4.定义LLM
+llm = ChatOpenAI(
+  model="gpt-4o-mini",
+  temperature=0,
+)
+# 5. 定义记忆组件(以ConversationBufferMemory为例)
+memory = ConversationBufferMemory(
+  memory_key="chat_history",
+  return_messages=True
+)
+# 6.创建Agent、AgentExecutor
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True)
+
+# 7.执行
+agent_executor.invoke({"input": "北京明天的天气怎么样？"})
+```
