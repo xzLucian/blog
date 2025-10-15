@@ -143,7 +143,7 @@ print(type(docs[0]))
 ```
 
 ### 2.3 加载CSV
-举例1：加载csv所有列
+**举例1** ：加载csv所有列
 
 ```python
 from langchain_community.document_loaders.csv_loader import CSVLoader
@@ -164,7 +164,7 @@ LangChain提供的JSON格式的文档加载器是 **JSONLoader** 。在实际应
 JSONLoader 使用指定的 jq结构来解析 JSON 文件。jq是一个轻量级的命令行 JSON 处理器 ，可以对JSON 格式的数据进行各种复杂的处理，包括数据过滤、映射、减少和转换，是处理 JSON 数据的首选工具之一。
 > pip install jq
 
-举例1：使用JSONLoader文档加载器加载
+**举例1** ：使用JSONLoader文档加载器加载
 
 ```python
 # 1.导入依赖
@@ -193,7 +193,7 @@ loader.load()
 # print(docs[0].page_content[:10])
 ```
 
-举例2：提取04-response.json文件中嵌套在 data.items[].content 的文本
+**举例2** ：提取04-response.json文件中嵌套在 data.items[].content 的文本
 - 如果希望处理 JSON 中的 **嵌套字段、数组元素提取**，可以使用 content_key 配合is_content_key_jq_parsable=True ，通过 jq 语法精准定位目标数据。
 - 通常，对api请求结果的采集
 
@@ -493,9 +493,7 @@ for i,chunk in enumerate(chunks):
 - **length_function** ：同TextSplitter（父类）。
 - **add_start_index** ：同TextSplitter（父类）。
 
-**举例1：**
-
-使用split_text()方法演示
+**举例1：** 使用split_text()方法演示
 
 ```python
 # 1.导入相关依赖
@@ -515,9 +513,7 @@ for para in paragraphs:
   print('-------')
 ```
 
-**举例2：**
-
-使用create_documents()方法演示，传入字符串列表，返回Document对象列表
+**举例2：** 使用create_documents()方法演示，传入字符串列表，返回Document对象列表
 ```python
 # 1.导入相关依赖
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -535,4 +531,826 @@ paragraphs = text_splitter.create_documents(list)
 for para in paragraphs:
   print(para)
   print('-------')
+```
+
+**举例3：** 使用create_documents()方法演示，将本地文件内容加载成字符串，进行拆分
+
+```python
+# 1.导入相关依赖
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+# 2.打开.txt文件
+with open("asset/load/08-ai.txt", encoding="utf-8") as f:
+  state_of_the_union = f.read() #返回的是字符串
+
+# 3.定义RecursiveCharacterTextSplitter（递归字符分割器）
+text_splitter = RecursiveCharacterTextSplitter(
+  chunk_size=100,
+  chunk_overlap=20,
+  #chunk_overlap=0,
+  length_function=len
+)
+# 4.分割文本
+texts = text_splitter.create_documents([state_of_the_union])
+# 5.打印分割文本
+for text in texts:
+  print(f"🔥{text.page_content}")
+```
+
+**举例4:** 用split_documents()方法演示，利用PDFLoader加载文档，对文档的内容用递归切割器切割
+
+```python
+# 1.导入相关依赖
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+
+# 2.定义PyPDFLoader加载器
+loader = PyPDFLoader("./asset/load/02-load.pdf")
+# 3.加载和切割文档对象
+docs = loader.load() # 返回Document对象构成的list
+# print(f"第0页：\n{docs[0]}")
+# 4.定义切割器
+text_splitter = RecursiveCharacterTextSplitter(
+  chunk_size=200,
+  #chunk_size=120,
+  chunk_overlap=0,
+  # chunk_overlap=100,
+  length_function=len,
+  add_start_index=True,
+)
+# 5.对pdf内容进行切割得到文
+档对象
+paragraphs = text_splitter.split_documents(docs)
+#paragraphs = text_splitter.create_documents([text])
+for para in paragraphs:
+  print(para.page_content)
+  print('-------')
+```
+
+**举例5：** 自定义分隔符
+
+有些书写系统没有单词边界，例如中文、日文和泰文。使用默认分隔符列表["\n\n", "\n", " ", ""]分割文本可能导致单词错误的分割。为了保持单词在一起，你可以自定义分割字符，覆盖分隔符列表以包含额外的标点符号。
+
+```python
+text_splitter = RecursiveCharacterTextSplitter(
+  chunk_size=200,
+  chunk_overlap=20, # 增加重叠字符
+  separators=["\n\n", "\n", "。", "！", "？", "……", "，", ""], # 添加中文标点
+  length_function=len,
+  keep_separator=True #保留句尾标点（如 ……），避免切割后丢失语气和逻辑
+)
+```
+效果：算法优先在句号、省略号处切割，保持句子完整性。
+
+#### 3.3.2 TokenTextSplitter/CharacterTextSplitter：Split by tokens
+当我们将文本拆分为块时，除了字符以外，还可以： 按Token的数量分割 （而非字符或单词数），将长文本切分成多个小块。
+
+**什么是Token？**
+
+- 对模型而言，Token是文本的最小处理单位。例如：
+  - 英文："hello" → 1个Token，"ChatGPT" → 2个Token（"Chat" + "GPT" ）。
+  - 中文："人工智能" → 可能拆分为2-3个Token（取决于分词器）。
+
+**为什么按Token分割？**
+
+- 语言模型对输入长度的限制是基于Token数（如GPT-4的8k/32k Token上限），直接按字符或单词分割可能导致实际Token数超限。（确保每个文本块不超过模型的Token上限）
+- 大语言模型(LLM)通常是以token的数量作为其计量(或收费)的依据，所以采用token分割也有助于我们在使用时更方便的控制成本。
+
+**TokenTextSplitter 使用说明：**
+
+- 核心依据：Token数量 + 自然边界。（TokenTextSplitter 严格按照 token 数量进行分割，但同时会优先在自然边界（如句尾）处切断，以尽量保证语义的完整性。）
+- 优点：与LLM的Token计数逻辑一致，能尽量保持语义完整
+- 缺点：对非英语或特定领域文本，Token化效果可能不佳
+- 典型场景：需要精确控制Token数输入LLM的场景
+
+**举例1：** 使用TokenTextSplitter
+
+```python
+# 1.导入相关依赖
+from langchain_text_splitters import TokenTextSplitter
+# 2.初始化 TokenTextSplitter
+text_splitter = TokenTextSplitter(
+  chunk_size=33, #最大 token 数为 32
+  chunk_overlap=0, #重叠 token 数为 0
+  encoding_name="cl100k_base", # 使用 OpenAI 的编码器,将文本转换为 token 序列
+)
+# 3.定义文本
+text = "人工智能是一个强大的开发框架。它支持多种语言模型和工具链。人工智能是指通过计算机程序模拟人类智能的一门科学。自20世纪50年代诞生以来，人工智能经历了多次起伏。"
+
+# 4.开始切割
+texts = text_splitter.split_text(text)
+# 打印分割结果
+print(f"原始文本被分割成了 {len(texts)} 个块:")
+for i, chunk in enumerate(texts):
+  print(f"块{i+1}: 长度：{len(chunk)} 内容：{chunk}")
+  print("-" * 50)
+```
+
+**为什么会出现这样的分割？**
+
+1、**`第一块 (29字符)`** ：内容是一个完整的句子，以句号结尾。TokenTextSplitter识别到这是一个自然的语义边界，即使这里的 token 数量可能尚未达到 33，它也选择在此处切割，以保证第一块语义的完整性。
+
+2、**`第二块 (32字符)`** ：内容包含了另一个完整句子 **`“人工智能是指...一门科学。”`** 以及下一句的开头 “自20世纪50” 。分割器在处理完第一个句子的 token 后，可能 token 数量已经接近 **`chunk_size`** ，于是在下一个自然边界（这里是句号）之后继续读取了少量 token（“自20世纪50”），直到非常接近 33token 的限制。
+
+**注意**：“50” 之后被切断，是因为编码器很可能将“50”识别为一个独立的 token，而“年代”是另一个 token。为了保证 token 的完整性，它不会在“50”字符中间切断。
+
+3、**`第三块 (19字符)`** ：是第二块中断内容的剩余部分，形成了一个较短的块。这是因为剩余内容本身的 token 数量就较少。
+
+特别注意：**字符长度不等于 Token 数量。**
+
+**举例2**：使用CharacterTextSplitter
+
+```python
+# 1.导入相关依赖
+from langchain_text_splitters import CharacterTextSplitter
+import tiktoken # 用于计算Token数量
+
+# 2.定义通过Token切割器
+text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+  encoding_name="cl100k_base", # 使用 OpenAI 的编码器
+  chunk_size=18,
+  chunk_overlap=0,
+  separator="。", # 指定中文句号为分隔符
+  keep_separator=False, # chunk中是否保留分隔符
+)
+# 3.定义文本
+text = "人工智能是一个强大的开发框架。它支持多种语言模型和工具链。今天天气很好，想出去踏青。但是又比较懒不想出去，怎么办"
+
+# 4.开始切割
+texts = text_splitter.split_text(text)
+print(f"分割后的块数: {len(texts)}")
+# 5.初始化tiktoken编码器（用于Token计数）
+encoder = tiktoken.get_encoding("cl100k_base") # 确保CharacterTextSplitter的encoding_name一致
+# 6.打印每个块的Token数和内容
+for i, chunk in enumerate(texts):
+  tokens = encoder.encode(chunk) # 现在encoder已定义
+  print(f"块{i + 1}: {len(tokens)} Token\n内容: {chunk}\n")
+```
+
+#### 3.3.3 SemanticChunker：语义分块
+SemanticChunking（语义分块）是 LangChain 中一种更高级的文本分割方法，它超越了传统的基于字符或固定大小的分块方式，而是根据 文本的语义结构 进行智能分块，使每个分块保持 语义完整性 ，从而提高检索增强生成(RAG)等应用的效果。
+
+**语义分割 vs 传统分割**
+
+|特性| 语义分割（SemanticChunker）| 传统字符分割（RecursiveCharacter）|
+|:---:|:---:|:---:|
+|**分割依据** |嵌入向量相似度| 固定字符/换行符|
+|**语义完整性** | ✅ 保持主题连贯 | ❌ 可能切断句子逻辑 |
+|**计算成本** | ❌ 高（需嵌入模型）| ✅ 低 |
+|**适用场景** | 需要高语义一致性的任务 | 简单文本预处理 |
+
+**举例：**
+
+```python
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai.embeddings import OpenAIEmbeddings
+import os
+import dotenv
+
+dotenv.load_dotenv()
+# 加载文本
+with open("asset/load/09-ai1.txt", encoding="utf-8") as f:
+  state_of_the_union = f.read() #返回字符串
+
+# 获取嵌入模型
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+embed_model = OpenAIEmbeddings(
+  model="text-embedding-3-large"
+)
+# 获取切割器
+text_splitter = SemanticChunker(
+  embeddings=embed_model,
+  breakpoint_threshold_type="percentile",#断点阈值类型：字面值["百分位数", "标差", "四分位准距", "梯度"] 选其一
+  breakpoint_threshold_amount=65.0 #断点阈值数量 (极低阈值 → 高分割敏感度)
+)
+# 切分文档
+docs = text_splitter.create_documents(texts = [state_of_the_union])
+print(len(docs))
+for doc in docs:
+  print(f"🔍 文档 {doc}:")
+```
+
+**关于参数的说明：**
+
+> 1. breakpoint_threshold_type （断点阈值类型）
+- **作用**：定义文本语义边界的检测算法，决定何时分割文本块。
+- 可选值及原理：
+
+|类型 |原理说明| 适用场景|
+|:---:|:----:|:----:|
+|**`percentile`**|计算相邻句子嵌入向量的余弦距离，取**距离分布的第N百分位值**作为阈值，高于此值则分割|常规文本（如文章、报告）|
+|**`standard_deviation`**|以**均值 + N倍标准差**为阈值，识别语义突变点|语义变化剧烈的文档（如技术手册）|
+|**`interquartile`**| 用**四分位距（IQR）** 定义异常值边界，超过则分割|长文档（如书籍）|
+|**`gradient`**|基于**嵌入向量变化的梯度**检测分割点（需自定义实现）| 实验性需求 |
+
+> 2. breakpoint_threshold_amount （断点阈值量）
+
+- **作用**：控制分割的**粒度敏感度**，值越小分割越细（块越多），值越大分割越粗（块越少）。
+- 取值范围与示例：
+  - **`percentile`** 模式：0.0~100.0，用户代码设 65.0 表示仅当余弦距离 > 所有距离中最低的65.0%值时分割 。默认值是：95.0，兼顾语义完整性与检索效率。值过小（比如0.1），会产生大量小文本块，过度分割可能导致上下文断裂。
+  - **`standard_deviation`** 模式：浮点数（如 **1.5** 表示均值+1.5倍标准差）。
+  - **`interquartile`** 模式：倍数（如 **1.5** 是IQR标准值）。
+
+#### 3.3.4 其它拆分器
+**类型1：HTMLHeaderTextSplitter：Split by HTML header**
+
+HTMLHeaderTextSplitter是一种专门用于处理HTML文档的文本分割方法，它根据HTML的 标题标签（如\<h1\>、\<h2\>等） 将文档划分为逻辑分块，同时保留标题的层级结构信息。
+
+**举例：**
+```python
+# 1.导入相关依赖
+from langchain.text_splitter import HTMLHeaderTextSplitter
+# 2.定义HTML文件
+html_string = """
+<!DOCTYPE html>
+<html>
+<body>
+  <div>
+    <h1>欢迎来到尚硅谷！</h1>
+    <p>尚硅谷是专门培训IT技术方向</p>
+    <div>
+      <h2>尚硅谷老师简介</h2>
+      <p>尚硅谷老师拥有多年教学经验，都是从一线互联网下来</p>
+      <h3>尚硅谷北京校区</h3>
+      <p>北京校区位于宏福科技园区</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+# 4.用于指定要根据哪些HTML标签来分割文本
+headers_to_split_on = [
+  ("h1", "标题1"),
+  ("h2", "标题2"),
+  ("h3", "标题3"),
+]
+# 5.定义HTMLHeaderTextSplitter分割器
+html_splitter = HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+# 6.分割器分割
+html_header_splits = html_splitter.split_text(html_string)
+html_header_splits
+```
+
+说明：
+- 标题下文本内容所属标题的层级信息保存在元数据中。
+- 每个分块会自动继承父级标题的上下文，避免信息割裂。
+
+**类型2：CodeTextSplitter：Split code**
+
+CodeTextSplitter是一个 专为代码文件 设计的文本分割器（Text Splitter），支持代码的语言包括['cpp','go', 'java', 'js', 'php', 'proto', 'python', 'rst', 'ruby', 'rust', 'scala', 'swift', 'markdown', 'latex', 'html','sol']。它能够根据编程语言的语法结构（如函数、类、代码块等）智能地拆分代码，保持代码逻辑的完整性。
+
+与递归文本分割器（如RecursiveCharacterTextSplitter）不同，CodeTextSplitter 针对代码的特性进行了优化，**`避免在函数或类的中间截断`**。
+
+**举例**：支持的语言
+
+> pip install langchain-text-splitters
+
+```python
+from langchain.text_splitter import Language
+# 支持分割语言类型
+# Full list of supported languages
+langs = [e.value for e in Language]
+print(langs)
+```
+
+**类型3：MarkdownTextSplitter：md数据类型**
+
+因为Markdown格式有特定的语法，一般整体内容由 **h1、h2、h3** 等多级标题组织，所以
+MarkdownHeaderTextSplitter的切分策略就是根据 **`标题来分割文本内容`**。
+
+**举例：**
+
+```python
+from langchain.text_splitter import MarkdownTextSplitter
+markdown_text = """
+# 一级标题\n
+这是一级标题下的内容\n\n
+## 二级标题\n
+- 二级下列表项1\n
+- 二级下列表项2\n
+"""
+
+# 关键步骤：直接修改实例属性
+splitter = MarkdownTextSplitter(chunk_size=30, chunk_overlap=0)
+splitter.is_separator_regex = True # 强制将分隔符视为正则表达式
+# 执行分割
+docs = splitter.create_documents(texts = [markdown_text])
+# print(len(docs))
+for i, doc in enumerate(docs):
+  print(f"\n🔍 分块{i + 1}:")
+  print(doc.page_content)
+```
+
+## 4. 文档嵌入模型 Text Embedding Models
+### 4.1 嵌入模型概述
+**Text Embedding Models**：文档嵌入模型，提供将文本编码为向量的能力，即 **`文档向量化`** 。 `文档写入` 和 `用户查询匹配` 前都会先执行文档嵌入编码，即向量化。
+
+![alt text](/public/langchain/retrieval/4.png)
+
+- LangChain提供了 超过25种 不同的嵌入提供商和方法的集成，从开源到专有API，总有一款适合你。
+- Hugging Face等开源社区提供了一些文本向量化模型（例如BGE），效果比闭源且调用API的向量化模型效果好，并且向量化模型参数量小，在CPU上即可运行。所以，这里推荐在开发RAG应用的过程中，使用 开源的文本向量化模型 。此外，开源模型还可以根据应用场景下收集的数据对模型进行微调，提高模型效果。
+
+LangChain中针对向量化模型的封装提供了两种接口，一种针对 **`文档的向量化(embed_documents)`** ，一种针对 **`句子的向量化embed_query`**。
+
+### 4.2 句子的向量化（embed_query）
+
+**举例：**
+
+```python
+from langchain
+import os
+import dotenv_openai import OpenAIEmbeddings
+dotenv.load_dotenv()
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+# 初始化嵌入模型
+embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+#embeddings_model = OpenAIEmbeddings(model="text-embedding-3-large")
+# 待嵌入的文本句子
+text = "What was the name mentioned in the conversation?"
+# 生成一个嵌入向量
+embedded_query = embeddings_model.embed_query(text = text)
+# 使用embedded_query[:5]来查看前5个元素的值
+print(embedded_query[:5])
+print(len(embedded_query))
+```
+### 4.3 文档的向量化（embed_documents）
+文档的向量化，接收的参数是字符串数组。
+
+**举例1：**
+```python
+from langchain_openai import OpenAIEmbeddings
+import numpy as np
+import pandas as pd
+import os
+import dotenv
+dotenv.load_dotenv()
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+# 初始化嵌入模型
+embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+# 待嵌入的文本列表
+texts = [
+  "Hi there!",
+  "Oh, hello!",
+  "What's your name?",
+  "My friends call me World",
+  "Hello World!"
+]
+# 生成嵌入向量
+embeddings = embeddings_model.embed_documents(texts)
+for i in range(len(texts)):
+  print(f"{texts[i]}:{embeddings[i][:3]}",end="\n\n")
+```
+
+**举例2：**
+```python
+from dotenv import load_dotenv
+from langchain_community.document_loaders import CSVLoader
+from langchain_openai import OpenAIEmbeddings
+embeddings_model = OpenAIEmbeddings(
+  model="text-embedding-3-large",
+)
+# 情况1：
+loader = CSVLoader("./asset/load/03-load.csv", encoding="utf-8")
+docs = loader.load_and_split()
+#print(len(docs))
+# 存放的是每一个chrunk的embedding
+embeded_docs = embeddings_model.embed_documents([doc.page_content for doc in docs])
+print(len(embeded_docs))
+# 表示的是每一个chrunk的embedding的维度
+print(len(embeded_docs[0]))
+print(embeded_docs[0][:10])
+```
+
+## 5. 向量存储(Vector Stores)
+### 5.1 理解向量存储
+将文本向量化之后，下一步就是进行向量的存储。这部分包含两块：
+- `向量的存储` ：将非结构化数据向量化后，完成存储
+- `向量的查询` ：查询时，嵌入非结构化查询并检索与嵌入查询“最相似”的嵌入向量。即具有相似性检索能力
+
+![alt text](/public/langchain/retrieval/5.png)
+
+![alt text](/public/langchain/retrieval/6.png)
+
+### 5.2 常用的向量数据库
+
+Langchain提供了超过50种不同向量存储(Vetor Stores)的集成，从开源的本地向量存储到云托管的私有向量存储，允许你选择最适合需求的向量存储。
+
+LangChain支持的向量存储参考 `VetorStore` 接口和实现。
+
+典型的介绍如下：
+|向量数据库|描述|
+|:---:|:---:|
+|Chroma|开源、免费的嵌入式数据库|
+|FAISS|Meta出品、开源、免费、Facebook AI相似性搜索服务。(Facebook AI Similarity Search,Facebook AI相似性搜索库)|
+|Milvus|用于存储、索引和管理由深度神经网络和其他ML模型产生的大量嵌入向量的数据库|
+|Pinecone|用于广泛功能的向量数据库|
+|Redis|基于Redis的检索器|
+
+### 5.3 向量数据库的理解
+假设你是一名摄影师，拍了大量的照片。为了方便管理和查找，你决定将这些 照片存储 到一个数据库中。传统的 关系型数据库 （如 MySQL、PostgreSQL 等）可以帮助你 存储照片的元数据 ，比如拍摄时间、地点、相机型号等。
+
+但是，当你想要根据 `照片的内容（如颜色、纹理、物体等）` 进行搜索时，传统数据库将无法满足你的需求，因为它们通常以数据表的形式存储数据，并使用查询语句进行精确搜索。那么此时，向量数据库就可以派上用场。
+
+我们可以构建一个多维的空间使得每张照片特征都存在于这个空间内，并用已有的维度进行表示，比如时间、地点、相机型号、颜色....此照片的信息将作为一个点，存储于其中。以此类推，即可在该空间中构建出无数的点，而后我们将这些点与空间坐标轴的原点相连接，就成为了一条条向量，当这些点变为向量之后，即可利用向量的计算进一步获取更多的信息。当要进行照片的检索时，也会变得更容易更快捷。
+
+**注意**：在向量数据库中进行检索时，检索并 `不是唯一的、精确的` ，而是查询和目标向量 最为相似的一些向量 ，具有模糊性。
+
+**延伸思考：** 只要对图片、视频、商品等素材进行向量化，就可以实现以图搜图、视频相关推荐、相似宝贝推荐等功能。
+
+### 5.4 代码实现
+使用向量数据库组件时需要同时传入包含 文本块的Document类对象 以及 `文本向量化组件` ，向量数据库组件会自动完成将文本向量化的工作，并写入数据库中。
+
+#### 5.4.1 数据的存储
+
+**举例**：从TXT文档中加载数据，向量化后存储到Chroma数据库
+
+安装模块：
+> pip install chromadb
+> 
+> pip install langchain-chroma
+
+```python
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.vectorstores import Chroma_community.document
+from langchain_loaders import TextLoader
+from langchain_openai import OpenAIEmbeddings
+# 举例：将分割后的文本，使用 OpenAI 嵌入模型获取嵌入向量，并存储在 Chroma 中
+# 获取嵌入模型
+my_embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
+# 创建TextLoader实例，并加载指定的文档
+loader = TextLoader("./asset/load/09-ai1.txt", encoding='utf-8')
+documents = loader.load()
+# 创建文本拆分器
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+# 拆分文档
+docs = text_splitter.split_documents(documents)
+
+# 存储：将文档和数据存储到向量数据库中
+db = Chroma.from_documents(docs, my_embedding)
+# 查询：使用相似度查找
+query = "人工智能的核心技术都有啥？"
+docs = db.similarity_search(query)
+print(docs[0].page_content)
+```
+
+**思考：此时数据存储在哪里呢？**
+
+**注意**：Chroma主要有两种存储模式： `内存模式` 和 `持久化模式` 。当使用persist_directory参数时，数据会保存到指定目录；如果没有指定，则默认使用内存存储。
+
+#### 5.4.2 数据的检索
+举例：一个包含构建Chroma向量数据库以及向量检索的代码
+前置代码：
+```python
+# 1.导入相关依赖
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from langchain_openai import OpenAIEmbeddings
+# 2.定义文档
+raw_documents = [
+  Document(
+    page_content="葡萄是一种常见的水果，属于葡萄科葡萄属植物。它的果实呈圆形或椭圆形，颜色有绿色、紫色、红色等多种。葡萄富含维生素C和抗氧化物质，可以直接食用或酿造成葡萄酒。",
+    metadata={"source": "水果", "type": "植物"}
+  ),
+  Document(
+    page_content="白菜是十字花科蔬菜，原产于中国北方。它的叶片形成紧密的球状层层包裹，口感清脆微甜。白菜富含膳食纤维和维生素K，常用于制作泡菜、炒菜或煮汤。",
+    metadata={"source": "蔬菜", "type": "植物"}
+  ),
+  Document(
+    page_content="狗是人类最早驯化的动物之一，属于犬科。它们具有高度社会性，能理解人类情绪，常被用作宠物、导盲犬或警犬。不同品种的狗在体型、毛色和性格上有很大差异。",
+    metadata={"source": "动物", "type": "哺乳动物"}
+  )
+
+  # 3. 创建嵌入模型
+embedding = OpenAIEmbeddings(model="text-embedding-ada-002")
+# 4.创建向量数据库
+db = Chroma.from_documents(
+  documents=raw_documents,
+  embedding=embedding,
+  persist_directory="./asset/chroma-3",
+)
+```
+
+**① 相似性检索（similarity_search）**
+
+接收字符串作为参数：
+
+```python
+# 5. 检索示例（返回前3个最相关结果）
+query = "哺乳动物"
+docs = db.similarity_
+search(query, k=3) # k=3表示返回3个最相关文
+print(f"查询: '{query}' 的结果:")
+for i, doc in enumerate(docs, 1):
+  print(f"\n结果 {i}:")
+  print(f"内容: {doc.page_content}")
+  print(f"元数据: {doc.metadata}")
+```
+
+**② 支持直接对问题向量查询（similarity_search_by_vector）**
+
+搜索与给定嵌入向量相似的文档，它接受`嵌入向量作为参数`，而不是字符串。
+
+```python
+query = "哺乳动物"
+embedding_vector = embedding.embed_query(query)
+
+docs = db.similarity_search_by_vector(embedding_vector, k=3)
+
+print(f"查询: '{query}' 的结果:")
+for i, doc in enumerate(docs, 1):
+  print(f"\n结果 {i}:")
+  print(f"内容: {doc.page_content}")
+  print(f"元数据: {doc.metadata}")
+```
+
+**③ 相似性检索，支持过滤元数据（filter）**
+
+```python
+query = "哺乳动物"
+docs = db.similarity_search(query=query,k=3,filter={"source": "动物"})
+for i, doc in enumerate(docs, 1):
+  print(f"\n结果 {i}:")
+  print(f"内容: {doc.page_content}")
+  print(f"元数据: {doc.metadata}")
+```
+
+**④ 通过L2距离分数进行搜索（similarity_search_with_score）**
+
+说明：分数值越小，检索到的文档越和问题相似。分值取值范围：[0，正无穷]
+
+```python
+
+docs = db.similarity_search_with_score(
+  "量子力学是什么?"
+)
+for doc, score in docs:
+  print(f" [L2距离得分={score:.3f}]{doc.page_content} [{doc.metadata}]")
+```
+
+**⑤ 通过余弦相似度分数进行搜索（_similarity_search_with_relevance_scores）**
+
+说明：分数值越接近1（上限），检索到的文档越和问题相似。
+
+```python
+docs = db._similarity_search_with_relevance_scores(
+  "量子力学是什么?"
+)
+for doc, score in docs:
+  print(f"* [余弦相似度得分={score:.3f}]{doc.page_content} [{doc.metadata}]")
+```
+
+**⑥ MMR（最大边际相关性，max_marginal_relevance_search）**
+
+MMR 是一种平衡 `相关性` 和 `多样性` 的检索策略，避免返回高度相似的冗余结果。
+
+```python
+docs = db.max_marginal_relevance_search(
+  query="量子力学是什么",
+  lambda_mult=0.8, # 侧重相似性
+)
+print("🔍 关于【量子力学是什么】的搜索结果：")
+print("=" * 50)
+for i, doc in enumerate(docs):
+  print(f"\n📖 结果 {i+1}:")
+  print(f"📌 内容: {doc.page_content}")
+  print(f"🏷 标签: {', '.join(f'{k}={v}' for k, v in doc.metadata.items())}")
+```
+
+参数说明： `lambda_mult` 参数值介于 0 到 1 之间，用于确定结果之间的多样性程度，其中 0 对应最大多样性，1 对应最小多样性。默认值为 0.5。
+
+## 6. 检索器(召回器) Retrievers
+### 6.1 介绍
+
+从“向量存储组件”的代码实现5.4.2中可以看到，向量数据库本身已经包含了实现召回功能的函数方法(`similarity_search`)。该函数通过计算原始查询向量与数据库中存储向量之间的相似度来实现召回。LangChain还提供了 `更加复杂的召回策略` ，这些策略被集成在Retrievers（检索器或召回器）组件中。
+
+Retrievers（检索器）是一种用于从大量文档中检索与给定查询相关的文档或信息片段的工具。检索器`不需要存储文档` ，只需要 `返回（或检索）文档` 即可。
+
+![alt text](/public/langchain/retrieval/7.png)
+
+Retrievers 的执行步骤：
+步骤1：将输入查询转换为向量表示。
+
+步骤2：在向量存储中搜索与查询向量最相似的文档向量（通常使用余弦相似度或欧几里得距离等度量方法）。
+
+步骤3：返回与查询最相关的文档或文本片段，以及它们的相似度得分。
+
+### 6.2 代码实现
+Retriever 一般和 VectorStore 配套实现，通过 `as_retriever()` 方法获取。
+
+举例：
+
+```python
+# 1.导入相关依赖
+import os
+import dotenv
+
+from langchain_community.document_loaders import TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
+
+dotenv.load_dotenv()
+
+# 2.定义文档加载器
+loader = TextLoader(file_path='./asset/load/09-ai1.txt',encoding="utf-8")
+# 3.加载文档
+documents = loader.load()
+# 4.定义文本切割器
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+# 5.切割文档
+docs = text_splitter.split_documents(documents)
+# 6.定义嵌入模型
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+embeddings = OpenAIEmbeddings(
+  model="text-embedding-3-large"
+)
+
+# 7.将文档存储到向量数据库中
+db = FAISS.from_documents(docs, embeddings)
+
+# 8.从向量数据库中得到检索器
+retriever = db.as_retriever()
+
+# 9.使用检索器检索
+docs = retriever.invoke("深度学习是什么？")
+
+print(len(docs))
+# 10.得到结果
+for doc in docs:
+  print(f"⭐{doc}")
+```
+
+### 6.3 使用相关检索策略
+
+前置代码：
+```python
+# 1.导入相关依赖
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.documents import Document
+# 2.定义文档
+document_1 = Document(
+  page_content="经济复苏：美国经济正在从疫情中强劲复苏，失业率降至历史低点！
+)
+
+document_2 = Document(
+  page_content="基础设施：政府将投资1万亿美元用于修复道路、桥梁和宽带网络。",
+)
+
+document_3 = Document(
+page_content="气候变化：承诺到2030年将温室气体排放量减少50%。",
+
+documents = [document_1,document_2,document_3]
+
+# 3.创建向量存储
+embeddings = OpenAIEmbeddings(
+  model="text-embedding-3-large"
+)
+
+# 4.将文档向量化，添加到向量数据库索引中，得到向量数据库对象
+db = FAISS.from_documents(documents, embeddings)
+```
+
+**① 默认检索器使用相似性搜索**
+```python
+# 获取检索器
+retriever = db.as_retriever(search_kwargs={"k": 4}) #这里设置返回的文档数
+
+docs = retriever.invoke("经济政策")
+
+for i, doc in enumerate(docs):
+  print(f"\n结果 {i+1}:\n{doc.page_content}\n")
+
+```
+
+**② 分数阈值查询**
+
+只有相似度超过这个值才会召回
+
+```python
+retriever = db.as_retriever(
+  search_type="similarity_score_threshold",
+  search_kwargs={"score_threshold": 0.1}
+)
+
+docs = retriever.invoke("经济政策")
+
+for doc in docs:
+  print(f"📌 内容: {doc.page_content}")
+
+```
+> 📌 内容: 经济复苏：美国经济正在从疫情中强劲复苏，失业率降至历史低点。！
+
+注意只会返回满足阈值分数的文档，不会获取文档的得分。如果想查询文档的得分是否满足阈值，可以使用向量数据库的 similarity_search_with_relevance_scores 查看（在5.4.2 情况5中讲过）。
+
+```python
+docs_with_scores = db.similarity_search_with_relevance_scores("经济政策")
+for doc, score in docs_with_scores:
+  print(f"\n相似度分数: {score:.4f}")
+  print(f"📌 内容: {doc.page_content}")
+
+```
+
+**③ MMR搜索**
+
+```python
+retriever = db.as_retriever(
+  search_type="mmr",
+  # search_kwargs={"fetch_k":2}
+)
+
+docs = retriever.invoke("经济政策")
+print(len(docs))
+for doc in docs:
+  print(f"📌 内容: {doc.page_content}")
+```
+
+### 6.4 结合LLM
+
+举例1：通过FAISS构建一个可搜索的向量索引数据库，并结合RAG技术让LLM去回答问题。
+
+**情况1：不用RAG给LLM灌输上下文数据**
+
+```python
+from langchain_openai import ChatOpenAI
+import os
+import dotenv
+dotenv.load_dotenv()
+
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+
+# 创建大模型实例
+llm = ChatOpenAI(model="gpt-4o-mini")
+# 调用
+
+response = llm.invoke("北京有什么著名的建筑？")
+print(response.content)
+
+```
+
+**情况2：使用RAG给LLM灌输上下文数据**
+
+> pip install faiss-cpu
+
+```python
+# 1. 导入所有需要的包
+from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI,OpenAIEmbeddings
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+import os
+import dotenv
+
+dotenv.load_dotenv()
+# 2. 创建自定义提示词模板
+prompt_template = """请使用以下提供的文本内容来回答问题。仅使用提供的文本信息，如果文本中没有相关信息，请回答"抱歉，提供的文本中没有这个信息"。
+文本内容：
+{context}
+
+问题：{question}
+
+回答：
+"
+"""
+prompt = PromptTemplate.from_template(prompt_template)
+# 3. 初始化模型
+os.environ['OPENAI_API_KEY'] = os.getenv("OPENAI_API_KEY1")
+os.environ['OPENAI_BASE_URL'] = os.getenv("OPENAI_BASE_URL")
+llm = ChatOpenAI(
+  model="gpt-4o-mini",
+  temperature=0
+)
+
+embedding_model = OpenAIEmbeddings(model="text-embedding-3-large")
+
+# 4. 加载文档
+loader = TextLoader("./asset/load/10-test_doc.txt", encoding='utf-8')
+documents = loader.load()
+# 5. 分割文档
+text_splitter = CharacterTextSplitter(
+  chunk_size=1000,
+  chunk_overlap=100,
+)
+texts = text_splitter.split_documents(documents)
+#print(f"文档个数:{len(texts)}")
+# 6. 创建向量存储
+vectorstore = FAISS.from_documents(
+  documents=texts,
+  embedding=embedding_model
+)
+# 7.获取检索器
+retriever = vectorstore.as_retriever()
+
+docs = retriever.invoke("北京有什么著名的建筑？")
+# 8. 创建Runnable链
+chain = prompt | llm
+# 9. 提问
+result = chain.invoke(input={"question":"北京有什么著名的建筑？","context":docs})
+print("\n回答:", result.content)
 ```
