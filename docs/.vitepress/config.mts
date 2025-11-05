@@ -19,11 +19,11 @@ export default defineConfig({
     siteTitle: false,
     nav: [
       { text: '首页', link: '/' },
-      { text: '网站导航', link: '/navigation/' },
+      { text: '网站导航', link: '/navigation' },
       {
         text: '笔记', items: [
           {
-            text:'LangChain v1.0',link:'/langchain'
+            text: 'LangChain v1.0', link: '/langchain'
           }
         ]
       }
@@ -38,9 +38,18 @@ export default defineConfig({
           // collapsed: true,
           items: [
             { text: 'Get started', link: '/langchain/' },
-            { text: 'Core components', items:[
-              {text:'Models' , link: '/langchain/Models'}
-            ] }
+            {
+              text: 'Core components', items: [
+                { text: 'Models', link: '/langchain/models' },
+                { text: 'Agents', link: '/langchain/agents' },
+                { text: 'Messages', link: '/langchain/messages' },
+                { text: 'Tools', link: '/langchain/tools' },
+                { text: 'Middleware', link: '/langchain/middleware' },
+                { text: 'Streaming', link: '/langchain/streaming' },
+                { text: 'Short-term memory', link: '/langchain/short-term-memory' },
+                { text: 'Structured output', link: '/langchain/structured-output' },
+              ]
+            }
           ]
         }
       ],
@@ -49,7 +58,7 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/xzLucian' }
     ],
     editLink: {
-      pattern: 'https://github.com/vuejs/vitepress/edit/main/docs/:path'
+      pattern: 'https://github.com/xzLucian/blog/tree/main/docs/:path'
     },
     footer: {
       message: 'MIT Licensed | Copyright © 2025-2026 <a class="vitepress" target="_blank" href="http://bytesize.asia/">ByteSize</a>',

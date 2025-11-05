@@ -102,7 +102,7 @@ Let's walk through each step:
     :::
 3. **Model configuration** for consistent responses
 
-    Set up your [language model](/oss/python/langchain/models) with the right [parameters](/oss/python/langchain/models#parameters) for your use case:
+    Set up your [language model](//langchain/models) with the right [parameters](//langchain/models#parameters) for your use case:
 
     ```python  theme={null}
     from langchain.chat_models import init_chat_model
@@ -134,7 +134,7 @@ Let's walk through each step:
 
 5. **Conversational memory** for chat-like interactions
 
-    Add [memory](/oss/python/langchain/short-term-memory) to your agent to maintain state across interactions. This allows
+    Add [memory]() to your agent to maintain state across interactions. This allows
     the agent to remember previous conversations and context.
 
     ```python
@@ -144,7 +144,7 @@ Let's walk through each step:
     ```
 
       In production, use a persistent checkpointer that saves to a database.
-      See [Add and manage memory](/oss/python/langgraph/add-memory#manage-short-term-memory) for more details.
+      See [Add and manage memory]() for more details.
 
 6. **Create and run the agent** create a fully functional agent
 
