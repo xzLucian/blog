@@ -3,8 +3,10 @@ import Layout from "./Layout.vue";
 import DefaultTheme from "vitepress/theme";
 import { h } from "vue"
 import NavLinks from "./components/NavLinks.vue";
+import Breadcrumb from "./components/Breadcrumb.vue";
+import ArticleShare from "./components/ArticleShare.vue";
+import ScrollToTop from "./components/ScrollToTop.vue";
 import { useData,EnhanceAppContext } from "vitepress";
-
 export default {
     extends: DefaultTheme,
     // 入口组件
@@ -14,6 +16,9 @@ export default {
         return h(Layout, props)
     },
     enhanceApp({ app, router }: EnhanceAppContext) {
-        app.component('NavLinks', NavLinks)
+        app.component('NavLinks', NavLinks),
+        app.component('Breadcrumb', Breadcrumb);
+        app.component('ArticleShare', ArticleShare);
+        app.component('ScrollToTop', ScrollToTop)
     }
 }

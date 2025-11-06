@@ -3,3 +3,11 @@
   --vp-c-brand-1: #646cff;
   --vp-c-brand-2: #747bff;
 }
+
+/* .dark {
+  --tk-theme-color:#a8b1ff
+} */
+
+#comments{
+  margin-top: 30px;
+}

@@ -11,8 +11,14 @@ export default defineConfig({
   description: "my blog website",
   head: [
     ['link', { rel: 'icon', href: '/web-title.png' }],
+    ['script', {
+      src: 'https://esm.sh/giscus',
+      type: 'module'
+    }]
   ],
   lastUpdated: true,
+  // 使用干净链接（无 .html 后缀）
+  cleanUrls: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: { light: '/light-logo.png', dark: '/dark-logo.png' },
@@ -29,7 +35,15 @@ export default defineConfig({
       }
     ],
     search: {
-      provider: 'local'
+      provider: 'algolia',
+      options: {
+        appId: 'BENK8RRKMG',
+        apiKey: '09c18b4c05ef81b94c0c03f713c9b9c0',
+        indexName: 'docsearch',
+        askAi: {
+          assistantId: 'XXXYYY'
+        }
+      }
     },
     sidebar: {
       '/langchain/': [
@@ -61,8 +75,8 @@ export default defineConfig({
       pattern: 'https://github.com/xzLucian/blog/tree/main/docs/:path'
     },
     footer: {
-      message: 'MIT Licensed | Copyright © 2025-2026 <a class="vitepress" target="_blank" href="http://bytesize.asia/">ByteSize</a>',
-      copyright: 'Powered by <a class="vitepress" target="_blank" href="//vitepress.vuejs.org/">VitePress - 1.6.4</a>'
+      message: 'Copyright © 2025-至今 <a class="vitepress" target="_blank" href="https://beian.miit.gov.cn/#/Integrated/index">赣ICP备2025075792号-1</a>',
+      copyright: 'Created by <a class="vitepress" target="_blank" href="http://bytesize.asia/">ByteSize</a>'
     }
   }
 })

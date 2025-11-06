@@ -76,6 +76,12 @@ export const NAV_DATA: NavData[] = [
         desc: 'MacWk - 精品mac软件下载',
         link: 'https://macwk.cn/',
       },
+      {
+        icon:'https://giscus.app/favicon.ico',
+        title:'giscus',
+        desc:'利用 GitHub Discussions 实现的评论系统',
+        link:'https://giscus.app/zh-CN'
+      }
     ],
   },
   {
@@ -773,6 +779,11 @@ export const NAV_DATA: NavData[] = [
         icon:'https://xiaozhi.me/favicon.ico',
         title:'小智AI',
         link:'https://xiaozhi.me/'
+      },
+      {
+        icon:'https://pegasus-frontend.org/img/favicon96.png',
+        title:'Pegasus Frontend',
+        link:'https://pegasus-frontend.org/'
       }
     ],
   },
