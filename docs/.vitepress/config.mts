@@ -39,9 +39,9 @@ export default defineConfig({
       options: {
         appId: 'BENK8RRKMG',
         apiKey: '09c18b4c05ef81b94c0c03f713c9b9c0',
-        indexName: 'docsearch',
+        indexName: 'ByteSize',
         askAi: {
-          assistantId: 'XXXYYY'
+          assistantId: '87f3jFNLH9lU'
         }
       }
     },
