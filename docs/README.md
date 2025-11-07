@@ -1,8 +1,5 @@
-# vitepress-nav-template
+# vitepress-blog
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/maomao1996/picture/main/vitepress-nav-template/home.webp" alt="home" />
-</p>
 <p align="center"> 基于 <b>VitePress</b> 的个人博客 </p>
 
 ---
