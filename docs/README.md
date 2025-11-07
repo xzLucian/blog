@@ -27,7 +27,7 @@
 
 ### 开启 giscus 评论
 
-需在 `docs/.vitepress/config.ts` 中配置 `themeConfig.comment`
+1. 需在 `docs/.vitepress/config.ts` 中配置 `themeConfig.comment`
 
 ```ts
 export default defineConfig({
@@ -35,21 +35,26 @@ export default defineConfig({
     /**
      * giscus 评论配置
      *  请根据 https://giscus.app/zh-CN 生成内容填写
+     *  CDN方式引入
      */
-    comment: {
-      /** github 仓库地址 */
-      repo: '',
-      /** giscus 仓库 ID */
-      repoId: '',
-      /** Discussion 分类 */
-      category: '',
-      /** giscus 分类 ID */
-      categoryId: '',
-    },
+    head: [
+    ['script', {
+      src: 'https://esm.sh/giscus',
+      type: 'module'
+    }]
+  ],
   },
 })
 ```
-
+2. 在`Layout.vue`中添加`giscus-widget`组件
+```vue
+<template #doc-after>
+  <div style="display: block; height: 40px;"></div>
+  <giscus-widget id="comments" repo="xzLucian/blog-comment" repoid="R_kgDOQQSxVw" category="Announcements"
+    categoryid="DIC_kwDOQQSxV84CxfmU" mapping="title" term="Welcome to giscus!" reactionsenabled="1"
+    emitmetadata="0" inputposition="top" theme="light" lang="en" loading="lazy" />
+</template>
+```
 #### algolia搜索
 需在 `docs/.vitepress/config.ts` 中配置 `themeConfig.search`
 

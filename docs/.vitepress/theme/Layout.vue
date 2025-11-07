@@ -1,7 +1,6 @@
 <template>
   <!-- 默认主题 -->
   <Layout>
-
     <template #doc-top>
       <Breadcrumb />
     </template>

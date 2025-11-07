@@ -1,10 +1,5 @@
 import { defineConfig } from 'vitepress'
 
-// export interface Footer{
-//   message?:string
-//   copyright?:string
-// }
-
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "Byte Size",
