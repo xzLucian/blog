@@ -1,10 +1,8 @@
-# vitepress-blog
 <p align="center">
   <img src="https://github.com/xzLucian/blog/blob/main/docs/public/light-logo.png" alt="home" />
 </p>
-<p align="center"> 基于 <b>VitePress</b> 的个人博客 </p>
 
----
+<p align="center"> 基于 <b>VitePress</b> 的个人博客 </p>
 
 ## 博客地址
 
