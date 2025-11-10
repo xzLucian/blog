@@ -2,6 +2,7 @@
 # editor directories and files
 .idea
 .vscode
+*.sh
 # dependencies
 node_modules/
 

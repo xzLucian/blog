@@ -9,7 +9,15 @@ export default defineConfig({
     ['script', {
       src: 'https://esm.sh/giscus',
       type: 'module'
-    }]
+    }], ['script', {}, `
+      window._hmt = window._hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?d589414480af5d457fc3fb0e02b5c230";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+      `]
   ],
   lastUpdated: true,
   // 使用干净链接（无 .html 后缀）
@@ -20,7 +28,7 @@ export default defineConfig({
     siteTitle: false,
     nav: [
       { text: '首页', link: '/' },
-      { text: '网站导航', link: '/navigation' },
+      { text: '导航', link: '/navigation' },
       {
         text: '笔记', items: [
           {
