@@ -30,7 +30,7 @@ const router = useRouter();
 
 // 使用 computed 确保响应式
 const breadcrumbItems = computed(() => {
-    console.log('路由路径更新:', route.path); // 调试用
+    // console.log('路由路径更新:', route.path); // 调试用
 
     const path = route.path.replace(/^\/|\/$/g, '');
     const pathArray = path ? path.split('/') : [];

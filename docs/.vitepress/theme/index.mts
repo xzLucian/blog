@@ -22,16 +22,18 @@ export default {
         app.component('ArticleShare', ArticleShare);
         app.component('ScrollToTop', ScrollToTop)
         
-        router.onBeforeRouteChange = (to)=>{
-            if(import.meta.env.MODE === 'production'){
-                // 百度统计代码
-                try {
-                    // @ts-ignore
-                    window._hmt.push(['_trackPageview', to.path]);
-                } catch (err) {
-                    console.error('Baidu Tongji Error:', err);
-                }
-            }
-        }
+        // router.onBeforeRouteChange = (to)=>{
+        //     if(import.meta.env.MODE === 'production'){
+        //         // 百度统计代码
+        //         try {
+        //             if (typeof window === 'undefined' && !!to){
+        //             // @ts-ignore
+        //             _hmt.push(['_trackPageview', to]);
+        //             }
+        //         } catch (err) {
+        //             console.error('Baidu Tongji Error:', err);
+        //         }
+        //     }
+        // }
     }
 }
