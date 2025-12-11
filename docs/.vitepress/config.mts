@@ -10,12 +10,19 @@ export default defineConfig({
       src: 'https://esm.sh/giscus',
       type: 'module'
     }], ['script', {}, `
-      window._hmt = window._hmt || [];
+      var _hmt = _hmt || [];
       (function() {
         var hm = document.createElement("script");
         hm.src = "https://hm.baidu.com/hm.js?d589414480af5d457fc3fb0e02b5c230";
-        var s = document.getElementsByTagName("script")[0]; 
+        var s = document.getElementsByTagName("script")[0];
         s.parentNode.insertBefore(hm, s);
+        /* 下面的代码非常重要！！！ 文档：https://tongji.baidu.com/web/help/article?id=324&type=0 */
+        _hmt.push(['_requirePlugin', 'UrlChangeTracker', {
+          shouldTrackUrlChange: function (newPath, oldPath) {
+            console.log('newPath=', newPath, ';oldPath=', oldPath) /* 控制台可查看日志，发布时请删除此行代码 */
+            return newPath && oldPath;
+          }}
+        ]);
       })();
       `]
   ],
@@ -33,6 +40,12 @@ export default defineConfig({
         text: '笔记', items: [
           {
             text: 'LangChain v1.0', link: '/langchain'
+          }
+        ]
+      },{
+        text: '手册', items: [
+          {
+            text: 'ArchLinux', link: '/manual/archlinux'
           }
         ]
       }

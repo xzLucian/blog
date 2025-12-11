@@ -114,7 +114,21 @@ export const NAV_DATA: NavData[] = [
         title: 'Beautiful.ai（PPT）',
         link: 'https://www.beautiful.ai',
       },
-
+      {
+        icon: 'https://platform.moonshot.cn/favicon.ico',
+        title: 'Moonshot AI 开放平台 - Kimi 大模型 API 服务',
+        link: 'https://platform.moonshot.cn/',
+      },
+      {
+        icon:'https://gw.alicdn.com/imgextra/i4/O1CN01vVn7g32134zNZEeAR_!!6000000006928-55-tps-24-24.svg',
+        title:'大模型服务平台百炼控制台',
+        link:'https://bailian.console.aliyun.com/#/home'
+      },
+      {
+        icon:'https://bigmodel.cn/img/icons/apple-touch-icon-152x152.png',
+        title:'智谱AI开放平台',
+        link:'https://bigmodel.cn/'
+      }
     ],
   },
   {

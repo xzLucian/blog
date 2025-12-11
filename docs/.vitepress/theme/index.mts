@@ -28,7 +28,7 @@ export default {
         //         try {
         //             if (typeof window === 'undefined' && !!to){
         //             // @ts-ignore
-        //             _hmt.push(['_trackPageview', to]);
+        //             window._hmt.push(['_trackPageview', to]);
         //             }
         //         } catch (err) {
         //             console.error('Baidu Tongji Error:', err);
