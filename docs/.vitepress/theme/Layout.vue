@@ -2,7 +2,9 @@
   <!-- 默认主题 -->
   <Layout>
     <template #doc-top>
-      <Breadcrumb />
+      <div class="breadcrumb-container">
+        <Breadcrumb />
+      </div>
     </template>
     <template #aside-outline-before>
       <ArticleShare />

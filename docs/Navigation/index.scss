@@ -51,4 +51,26 @@
     // 移除页脚上面横线
     border-top: none;
   }
+
+  /* 导航页面 breadcrumb 样式 */
+  .breadcrumb-container {
+    margin-left: 13px !important;
+    max-width: calc(100% - 64px) !important;
+    padding: 16px 0 !important;
+  }
+
+  @media (max-width: 1280px) {
+    .breadcrumb-container {
+      margin-left: 16px !important;
+      max-width: calc(100% - 32px) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .breadcrumb-container {
+      margin-left: 8px !important;
+      max-width: calc(100% - 16px) !important;
+      padding: 12px 0 !important;
+    }
+  }
 }

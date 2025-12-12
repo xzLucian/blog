@@ -1,23 +1,25 @@
 <template>
-    <nav class="breadcrumb" aria-label="breadcrumb">
-        <ol class="breadcrumb-list">
-            <li v-for="(item, index) in breadcrumbItems" :key="index" class="breadcrumb-item" :class="{
-                'breadcrumb-item--current': item.isCurrent,
-                'breadcrumb-item--home': index === 0
-            }">
-                <a v-if="item.link && !item.isCurrent" :href="item.link" class="breadcrumb-link"
-                    @click.prevent="handleClick(item)">
-                    {{ item.name }}
-                </a>
-                <span v-else class="breadcrumb-current" aria-current="page">
-                    {{ item.name }}
-                </span>
-                <span v-if="index < breadcrumbItems.length - 1" class="breadcrumb-separator">
-                    /
-                </span>
-            </li>
-        </ol>
-    </nav>
+    <div class="breadcrumb-container">
+        <nav class="breadcrumb" aria-label="breadcrumb">
+            <ol class="breadcrumb-list">
+                <li v-for="(item, index) in breadcrumbItems" :key="index" class="breadcrumb-item" :class="{
+                    'breadcrumb-item--current': item.isCurrent,
+                    'breadcrumb-item--home': index === 0
+                }">
+                    <a v-if="item.link && !item.isCurrent" :href="item.link" class="breadcrumb-link"
+                        @click.prevent="handleClick(item)">
+                        {{ item.name }}
+                    </a>
+                    <span v-else class="breadcrumb-current" aria-current="page">
+                        {{ item.name }}
+                    </span>
+                    <span v-if="index < breadcrumbItems.length - 1" class="breadcrumb-separator">
+                        /
+                    </span>
+                </li>
+            </ol>
+        </nav>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -91,6 +93,21 @@ function handleClick(item: any) {
 
 
 <style scoped>
+/* breadcrumb-container - 与VitePress container保持相同的布局样式 */
+.breadcrumb-container {
+    /* 基础容器样式 - 模拟VitePress的container */
+    max-width: 1280px;
+    margin-left: 200px;
+    padding: 16px 24px;
+}
+/* 有sidebar时的样式调整 */
+.VPDoc.has-sidebar ~ .breadcrumb-container,
+.VPDoc:has(~ .aside) + * .breadcrumb-container,
+body:has(.VPDoc.has-sidebar) .breadcrumb-container {
+    max-width: 100%;
+    margin-left: 50px;
+}
+
 .breadcrumb {
     font-size: 0.875rem;
 }
@@ -141,12 +158,35 @@ function handleClick(item: any) {
     user-select: none;
 }
 
-/* 移动端适配 */
+/* 响应式适配 */
+@media (max-width: 1280px) {
+    .breadcrumb-container {
+        padding: 16px 16px;
+    }
+
+    .VPDoc.has-sidebar ~ .breadcrumb-container,
+    .VPDoc:has(~ .aside) + * .breadcrumb-container,
+    body:has(.VPDoc.has-sidebar) .breadcrumb-container {
+        margin-left: 64px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
 
 @media (max-width: 768px) {
     .breadcrumb {
         font-size: 0.8rem;
-        margin: 0.5rem 0 1rem;
+    }
+
+    .breadcrumb-container {
+        padding: 12px 16px;
+    }
+
+    .VPDoc.has-sidebar ~ .breadcrumb-container,
+    .VPDoc:has(~ .aside) + * .breadcrumb-container,
+    body:has(.VPDoc.has-sidebar) .breadcrumb-container {
+        margin-left: 0;
+        padding: 12px 16px;
     }
 
     .breadcrumb-list {

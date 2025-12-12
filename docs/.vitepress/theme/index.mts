@@ -8,6 +8,7 @@ import Breadcrumb from "./components/Breadcrumb.vue";
 import ArticleShare from "./components/ArticleShare.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
 import { useData,EnhanceAppContext } from "vitepress";
+import "./styles/custom.css"
 export default {
     extends: DefaultTheme,
     // 入口组件
