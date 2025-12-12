@@ -4,11 +4,16 @@
   --vp-c-brand-2: #747bff;
 }
 
-#comments{
+#comments {
   margin-top: 30px;
 }
+
+.VPDoc {
+  padding: 0px 32px 0 !important;
+}
+
 @media (min-width: 960px) {
-    .VPDoc[data-v-10119189] {
-        padding: 18px 32px 0;
-    }
+  .VPDoc {
+    padding: 18px 32px 0;
+  }
 }
