@@ -1,0 +1,188 @@
+// Shared content rendering styles for article & note detail pages.
+// Usage: add class "content-body" to the v-html container,
+// then include this file in the page's <style> block.
+
+.content-body {
+  color: rgb(var(--c-text) / 0.82);
+
+  h2 {
+    margin-top: 2.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(var(--c-text));
+  }
+
+  h3 {
+    margin-top: 2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: rgb(var(--c-text));
+  }
+
+  p {
+    margin: 1.1rem 0;
+    line-height: 1.9rem;
+    font-size: 1.02rem;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid rgb(var(--c-border));
+  }
+
+  a:hover {
+    border-bottom-color: rgb(var(--c-accent-2));
+  }
+
+  code {
+    padding: 0.12em 0.35em;
+    border-radius: 0.45rem;
+    background: rgb(var(--c-card));
+    border: 1px solid rgb(var(--c-border));
+    font-size: 0.95em;
+  }
+
+  pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.875em;
+    line-height: 1.7;
+  }
+
+  pre {
+    padding: 1.25rem;
+    border-radius: 0.9rem;
+    background: rgb(var(--c-card) / 0.7);
+    overflow: auto;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
+
+  ul {
+    list-style: disc;
+    padding-left: 1.5em;
+  }
+
+  ul[data-type="taskList"] {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0.5rem 0;
+  }
+
+  li[data-type="taskItem"] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem;
+    list-style: none !important;
+    padding: 0 !important;
+
+    > label {
+      display: inline-flex !important;
+      align-items: center;
+      flex: 0 0 auto !important;
+      cursor: pointer;
+    }
+
+    > label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    > div {
+      flex: 1 1 0% !important;
+      min-width: 0;
+
+      > p {
+        margin: 0;
+      }
+    }
+  }
+
+  ol {
+    list-style: decimal;
+    padding-left: 1.5em;
+  }
+
+  li {
+    margin: 0.35rem 0;
+    line-height: 1.9rem;
+    font-size: 1.02rem;
+  }
+
+  blockquote {
+    padding: 0.5rem 1rem;
+    border-left: 4px solid rgb(var(--c-border));
+    color: rgb(var(--c-muted));
+    margin: 1.1rem 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.4rem 0;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(var(--c-border));
+    text-align: left;
+  }
+
+  th {
+    font-weight: 600;
+    background: rgb(var(--c-card) / 0.5);
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid rgb(var(--c-border));
+    margin: 2rem 0;
+  }
+
+  strong {
+    font-weight: 600;
+    color: rgb(var(--c-text));
+  }
+}
+
+// Callout blocks
+.content-body .callout {
+  margin: 1.4rem 0;
+  border-radius: 0.6rem;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid;
+}
+
+.content-body .callout__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.content-body .callout__content > *:first-child { margin-top: 0; }
+.content-body .callout__content > *:last-child { margin-bottom: 0; }
+
+.content-body .callout--info { border-left-color: #3b82f6; background: rgb(59 130 246 / 0.06); }
+.content-body .callout--tip { border-left-color: #22c55e; background: rgb(34 197 94 / 0.06); }
+.content-body .callout--warning { border-left-color: #f59e0b; background: rgb(245 158 11 / 0.06); }
+.content-body .callout--danger { border-left-color: #ef4444; background: rgb(239 68 68 / 0.06); }
+.content-body .callout--details { border-left-color: #8b5cf6; background: rgb(139 92 246 / 0.06); }
+
+.content-body .callout--info .callout__title { color: #3b82f6; }
+.content-body .callout--tip .callout__title { color: #22c55e; }
+.content-body .callout--warning .callout__title { color: #f59e0b; }
+.content-body .callout--danger .callout__title { color: #ef4444; }
+.content-body .callout--details .callout__title { color: #8b5cf6; }
+
+.content-body details.callout { cursor: pointer; }
+.content-body details.callout summary { font-size: 0.85rem; font-weight: 700; color: #8b5cf6; }

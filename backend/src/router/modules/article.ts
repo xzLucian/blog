@@ -1,0 +1,45 @@
+import { AppRouteRecord } from '@/types/router'
+
+export const articleRoutes: AppRouteRecord = {
+  path: '/article',
+  name: 'Article',
+  component: '/index/index',
+  meta: {
+    title: 'menus.article.title',
+    icon: 'ri:book-2-line'
+  },
+  children: [
+    {
+      path: 'article-list',
+      name: 'ArticleList',
+      component: '/article/list',
+      meta: {
+        title: 'menus.article.articleList',
+        icon: 'ri:article-line',
+        keepAlive: true
+      }
+    },
+    {
+      path: 'detail/:id',
+      name: 'ArticleDetail',
+      component: '/article/detail',
+      meta: {
+        title: 'menus.article.articleDetail',
+        isHide: true,
+        keepAlive: true,
+        activePath: '/article/article-list'
+      }
+    },
+    {
+      path: 'publish',
+      name: 'ArticlePublish',
+      component: '/article/publish',
+      meta: {
+        title: 'menus.article.articlePublish',
+        icon: 'ri:telegram-2-line',
+        keepAlive: true,
+        isFullPage: true
+      }
+    }
+  ]
+}
